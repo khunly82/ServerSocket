@@ -12,20 +12,20 @@ namespace ServerSocket.Hubs
             Game? g = Games.FirstOrDefault(g => g.Name == groupName);
             if(g == null)
             {
-                await Clients.Caller.SendAsync("Error", "This game does not exists");
+                await Clients.Caller.SendAsync("error", "This game does not exists");
             }
             else if (g.OpponentId != null) 
             {
-                await Clients.Caller.SendAsync("Error", "This game is not available");
+                await Clients.Caller.SendAsync("error", "This game is not available");
             }
-            await Clients.All.SendAsync("AvailableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
         }
 
         public async Task Create(string groupName)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
             Games.Add(new Game(groupName, Context.ConnectionId));
-            await Clients.All.SendAsync("AvailableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
         }
 
         public async Task SendMessage(string groupName, string message)
@@ -33,15 +33,20 @@ namespace ServerSocket.Hubs
             await Clients.Group(groupName).SendAsync(message);
         }
 
+        public override async Task OnConnectedAsync()
+        {
+            await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+        }
+
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             Game? g = Games.FirstOrDefault(g => g.OwnerId == Context.ConnectionId || g.OpponentId == Context.ConnectionId);
             if(g != null)
             {
-                await Clients.Group(g.Name).SendAsync("Error", "Your opponent has left");
+                await Clients.Group(g.Name).SendAsync("error", "Your opponent has left");
                 Games.Remove(g);
             }
-            await Clients.All.SendAsync("AvailableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
         }
     }
 
