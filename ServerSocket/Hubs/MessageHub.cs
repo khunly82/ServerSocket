@@ -8,7 +8,6 @@ namespace ServerSocket.Hubs
 
         public async Task Join(string groupName)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
             Game? g = Games.FirstOrDefault(g => g.Name == groupName);
             if(g == null)
             {
@@ -18,24 +17,35 @@ namespace ServerSocket.Hubs
             {
                 await Clients.Caller.SendAsync("error", "This game is not available");
             }
-            await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            else
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+                await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            }
         }
 
         public async Task Create(string groupName)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-            Games.Add(new Game(groupName, Context.ConnectionId));
-            await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            if(Games.Any(g => g.Name == groupName))
+            {
+                await Clients.Caller.SendAsync("error", "This name is invalid");
+            }
+            else
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+                Games.Add(new Game(groupName, Context.ConnectionId));
+                await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            }
         }
 
         public async Task SendMessage(string groupName, string message)
         {
-            await Clients.Group(groupName).SendAsync(message);
+            await Clients.Group(groupName).SendAsync("message", message);
         }
 
         public override async Task OnConnectedAsync()
         {
-            await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
+            await Clients.Caller.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
