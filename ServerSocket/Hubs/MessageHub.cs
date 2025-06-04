@@ -41,7 +41,7 @@ namespace ServerSocket.Hubs
 
         public async Task SendMessage(Message message)
         {
-            await Clients.Group(message.Group).SendAsync("message", message.Value);
+            await Clients.OthersInGroup(message.Group).SendAsync("message", message.Value);
         }
 
         public override async Task OnConnectedAsync()
