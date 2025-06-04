@@ -38,9 +38,9 @@ namespace ServerSocket.Hubs
             }
         }
 
-        public async Task SendMessage(string groupName, string message)
+        public async Task SendMessage(Message message)
         {
-            await Clients.Group(groupName).SendAsync("message", message);
+            await Clients.Group(message.Group).SendAsync("message", message.Value);
         }
 
         public override async Task OnConnectedAsync()
@@ -71,5 +71,10 @@ namespace ServerSocket.Hubs
         public string Name { get; set; }
         public string OwnerId { get; set; }
         public string? OpponentId { get; set; }
+    }
+
+    public class Message {
+        public string Group { get; set; } = null!;
+        public string Value { get; set; } = null!;
     }
 }
