@@ -19,6 +19,7 @@ namespace ServerSocket.Hubs
             }
             else
             {
+                g.OpponentId = Context.ConnectionId;
                 await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
                 await Clients.All.SendAsync("availableGames", Games.Where(g => g.OpponentId == null).Select(g => g.Name));
             }
